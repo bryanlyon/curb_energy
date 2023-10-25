@@ -24,6 +24,6 @@ All your defined Curb circuits should show up in your Home assistant prefixed wi
 For example, your "Main" circuit should show up in Home Assistant as curb_assistant.main.
 
 ## Todo:
-Handle more than one location
-Error handling
-Correct for longer/shorter periods between calls
+* Handle more than one location
+* Error handling
+* Correct for longer/shorter periods between calls
