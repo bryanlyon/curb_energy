@@ -1,0 +1,9 @@
+{
+  "domain": "curb_energy",
+  "name": "Curb Energy",
+  "version": "0.0.1",
+  "documentation": "",
+  "dependencies": [],
+  "codeowners": ["@bryanlyon"],
+  "requirements": ["requests"]
+}
