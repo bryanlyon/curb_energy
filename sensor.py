@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 import voluptuous as vol
 
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity
-from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.util import Throttle
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 
@@ -47,6 +46,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         sensors.append(
             CurbEnergySensor(entity_id, circuit["label"], curb_api)
         )
+
+    main_consumption = CurbEnergySensor(f"sensor.curb_consumption", "Main", curb_api, name="Curb Energy Consumption", tag="kwhr", unit="kWh")
+
+    sensors.append(main_consumption)
 
     _LOGGER.debug(f"Adding {len(sensors)} sensors")
 
@@ -114,17 +117,24 @@ class CurbAPI:
             _LOGGER.error("No circuits found")
 
 
-class CurbEnergySensor(Entity):
-    def __init__(self, entity_id, circuit_label, curb_api):
+class CurbEnergySensor(SensorEntity):
+    def __init__(self, entity_id, circuit_label, curb_api, name=None, tag='avg', unit='W'):
         self.entity_id = entity_id
-        self._name = f"Curb Energy {circuit_label}"
+        self._attr_unit_of_measurement = unit
+        self._attr_state_class = "total_increasing" if "h" in unit else "measurement"
+        self._attr_device_class = "energy" if "h" in unit else "power"
+        if name is None:
+            self._name = f"Curb Energy {circuit_label}"
+        else:
+            self._name = name
         self._state = None
-        self._unit_of_measurement = "W"
+        self._last_reset = None
         self.circuit_label = circuit_label
         self.curb_api = curb_api
+        self.tag = tag
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
@@ -132,8 +142,24 @@ class CurbEnergySensor(Entity):
         return self._state
 
     @property
-    def unit_of_measurement(self):
-        return self._unit_of_measurement
+    def unit_of_measurement(self) -> str:
+        _LOGGER.debug(f"Returning unit of measurement {self._attr_unit_of_measurement}")
+        return self._attr_unit_of_measurement
+    
+    @property
+    def device_class(self) -> str:
+        _LOGGER.debug(f"Returning device class {self._attr_device_class}")
+        return self._attr_device_class
+    
+    @property
+    def state_class(self) -> str:
+        _LOGGER.debug(f"Returning state class {self._attr_state_class}")
+        return self._attr_state_class
+    
+    @property
+    def last_reset(self):
+        _LOGGER.debug(f"Returning last reset {self._last_reset}")
+        return self._last_reset
 
     @Throttle(SCAN_INTERVAL)
     def update(self):
@@ -144,5 +170,6 @@ class CurbEnergySensor(Entity):
                 return
         for circuit in self.curb_api.circuits:
             if circuit["label"] == self.circuit_label:
-                self._state = int(circuit['avg'])
+                self._state = float(circuit[self.tag])
+                self._last_reset = datetime.now()-timedelta(minutes=5)  # Set reset time to 5 minutes ago
                 _LOGGER.debug(f"Updating {self.entity_id} to {self._state}")

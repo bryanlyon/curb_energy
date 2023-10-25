@@ -6,7 +6,12 @@ It loads all circuits from your Curb account into their own entities and updates
 
 Right now, we're using the aggregate call from the api so it will give you the average over the last 5 minutes each time it's called.
 
-## To Use:
+## Features
+
+* Automatically add all entities from circuits
+* Create a consumption sensor that works with the Energy Dashboard to show consumption
+
+## To Use
 * Download or clone the repo into your Home Assistant config/custom_component folder.
 * Add entries to your configuration.yaml file as follows:
 
@@ -23,7 +28,7 @@ All your defined Curb circuits should show up in your Home assistant prefixed wi
 
 For example, your "Main" circuit should show up in Home Assistant as curb_assistant.main.
 
-## Todo:
+## Todo
 * Handle more than one location
 * Error handling
 * Correct for longer/shorter periods between calls
