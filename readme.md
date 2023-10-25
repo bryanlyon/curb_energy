@@ -27,3 +27,4 @@ For example, your "Main" circuit should show up in Home Assistant as curb_assist
 * Handle more than one location
 * Error handling
 * Correct for longer/shorter periods between calls
+* Add support for the energy dashboard
