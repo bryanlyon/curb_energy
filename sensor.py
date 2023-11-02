@@ -42,11 +42,14 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     curb_api.get_circuits()
     sensors = []
     for circuit in curb_api.circuits:
-        entity_id = f"{DOMAIN}.{circuit['label'].lower().replace(' ', '_').replace('/','_')}"
-        _LOGGER.debug(f"Adding sensor {entity_id}")
-        sensors.append(
-            CurbEnergySensor(entity_id, circuit["label"], curb_api)
-        )
+        try:
+            entity_id = f"{DOMAIN}.{circuit['label'].lower().replace(' ', '_').replace('/','_')}"
+            _LOGGER.debug(f"Adding sensor {entity_id}")
+            sensors.append(
+                CurbEnergySensor(entity_id, circuit["label"], curb_api)
+            )
+        except:
+            _LOGGER.error(f"Failed to add sensor {circuit}")
 
     _LOGGER.debug(f"Adding {len(sensors)} sensors")
 
