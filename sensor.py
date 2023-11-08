@@ -1,3 +1,5 @@
+"""Custom component for Home Assistant to retrieve data from Curb Energy API"""
+
 import logging
 import requests
 import json
@@ -37,17 +39,20 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if not curb_api.authenticate():
         _LOGGER.error("Unable to authenticate with Curb API")
         return False
-    
+
     curb_api.get_circuits()
     sensors = []
     for circuit in curb_api.circuits:
-        entity_id = f"{DOMAIN}.{circuit['label'].lower().replace(' ', '_').replace('/','_')}"
-        _LOGGER.debug(f"Adding sensor {entity_id}")
-        sensors.append(
-            CurbEnergySensor(entity_id, circuit["label"], curb_api)
-        )
+        try:
+            entity_id = f"{DOMAIN}.{circuit['label'].lower().replace(' ', '_').replace('/','_')}"
+            _LOGGER.debug(f"Adding sensor {entity_id}")
+            sensors.append(
+                CurbEnergySensor(entity_id, circuit["label"], curb_api)
+            )
+        except KeyError:
+            _LOGGER.error(f"Unable to add sensor for circuit {circuit['label']}")
 
-    main_consumption = CurbEnergySensor(f"sensor.curb_consumption", "Main", curb_api, name="Curb Energy Consumption", tag="kwhr", unit="kWh")
+    main_consumption = CurbEnergySensor("sensor.curb_consumption", "Main", curb_api, name="Curb Energy Consumption", tag="kwhr", unit="kWh")
 
     sensors.append(main_consumption)
 
@@ -98,18 +103,17 @@ class CurbAPI:
             return True
 
         return False
-    
+
     @Throttle(SCAN_INTERVAL)
     def get_circuits(self):
         headers = {"Authorization": f"Bearer {self.access_token}"}
         locationResponse = requests.get(f"{BASE_URL}/locations", headers=headers, timeout=8)
+
+        self.circuits = []
         for location in locationResponse.json():
-            # response = requests.get(f"{BASE_URL}/latest/{location['id']}", headers=headers, timeout=8)
             response = requests.get(f"{BASE_URL}/aggregate/{location['id']}/{RANGE}/{RESOLUTION}", headers=headers, timeout=8)
-        if response.status_code == 200:
-            self.circuits = response.json()
-        else:
-            self.circuits = []
+            if response.status_code == 200:
+                self.circuits += response.json()
 
         if len(self.circuits) > 0:
             _LOGGER.debug(f"Retrieved {len(self.circuits)} circuits")
@@ -145,17 +149,17 @@ class CurbEnergySensor(SensorEntity):
     def unit_of_measurement(self) -> str:
         _LOGGER.debug(f"Returning unit of measurement {self._attr_unit_of_measurement}")
         return self._attr_unit_of_measurement
-    
+
     @property
     def device_class(self) -> str:
         _LOGGER.debug(f"Returning device class {self._attr_device_class}")
         return self._attr_device_class
-    
+
     @property
     def state_class(self) -> str:
         _LOGGER.debug(f"Returning state class {self._attr_state_class}")
         return self._attr_state_class
-    
+
     @property
     def last_reset(self):
         _LOGGER.debug(f"Returning last reset {self._last_reset}")
