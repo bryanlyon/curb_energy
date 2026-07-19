@@ -1,5 +1,8 @@
 # curb_energy for Home Assistant
 
+## Important update.  Curb has shut down their servers.  This repo no longer works, use [h-energycurb](https://github.com/pvanbaren/ha-energycurb) instead.
+
+
 A [Home Assistant](https://www.home-assistant.io/) component for [Curb Energy monitoring](https://www.poweredbyelevation.com/curb-energy-monitoring)
 
 It loads all circuits from your Curb account into their own entities and updates them every 5 minutes.  Handles authentication and refreshing data.
